@@ -11,6 +11,7 @@ from app.integrations.internshala import (
     build_store,
 )
 from app.resume_parser import analyze_resume
+from app.matching import MatchJobsRequest, match_jobs
 
 APP_ENV = os.getenv("APP_ENV", "development")
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "5"))
@@ -18,10 +19,10 @@ MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 app = FastAPI(
     title="Job Application Agent API",
-    version="0.2.0",
+    version="0.3.0",
     description=(
-        "Phase 1: resume intelligence. Phase 2: compliant Internshala "
-        "manual listing capture. No automated Internshala website access."
+        "Phase 1: resume intelligence. Phase 2: compliant Internshala manual capture. "
+        "Phase 3: explainable resume-to-job matching. No automated Internshala website access."
     ),
 )
 
@@ -46,7 +47,7 @@ def health():
     return {
         "status": "healthy",
         "service": "job-application-agent-api",
-        "phase": 2,
+        "phase": 3,
         "environment": APP_ENV,
     }
 
@@ -129,3 +130,13 @@ def get_internshala_job(dedupe_key: str):
     if job is None:
         raise HTTPException(status_code=404, detail="Captured listing not found.")
     return job
+
+
+@app.post("/api/v1/matching/jobs", tags=["Matching"])
+def match_captured_jobs(payload: MatchJobsRequest):
+    """Rank captured listings against a reviewed resume profile and preferences."""
+    return match_jobs(
+        profile=payload.candidate_profile,
+        preferences=payload.preferences,
+        jobs=job_store.list_jobs(),
+    )
