@@ -24,14 +24,14 @@ def create_job():
         InternshalaJobCreate(
             title="MERN Stack Developer Intern",
             company="Example Technologies",
-            description="Build applications using React, Node.js, Express, MongoDB and TypeScript.",
+            description="Build applications using React, Node.js, Express, MongoDB and Python.",
             apply_url="https://internshala.com/internship/detail/application-material-test/",
             location="Remote",
             work_mode="remote",
             stipend_status="paid",
             stipend_amount=5000,
             stipend_period="month",
-            skills=["React", "Node.js", "Express", "MongoDB", "TypeScript"],
+            skills=["React", "Node.js", "Express", "MongoDB", "Python"],
         )
     )
 
@@ -51,7 +51,7 @@ def test_prepare_application_material_returns_drafts_without_submitting():
     assert result["submission_status"] == "draft_only"
     assert result["job"]["company"] == "Example Technologies"
     assert "React.js" in result["resume_guidance"]["skills_to_highlight"]
-    assert "TypeScript" in result["resume_guidance"]["skills_not_found_in_resume"]
+    assert "Python" in result["resume_guidance"]["skills_not_found_in_resume"]
     assert "[Your Name]" in result["cover_letter"]
     assert "Nothing has been sent" in result["note"]
     job_store._jobs.clear()
