@@ -2,6 +2,7 @@ import re
 from typing import BinaryIO
 
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError, PdfStreamError
 
 SKILL_TERMS = [
     "JavaScript", "Python", "SQL", "C++", "C", "React", "React.js",
@@ -22,10 +23,13 @@ SECTION_HEADINGS = {
 
 
 def _extract_text(file_obj: BinaryIO) -> str:
-    reader = PdfReader(file_obj)
-    if reader.is_encrypted:
-        raise ValueError("Password-protected PDFs are not supported.")
-    text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
+    try:
+        reader = PdfReader(file_obj)
+        if reader.is_encrypted:
+            raise ValueError("Password-protected PDFs are not supported.")
+        text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
+    except (PdfReadError, PdfStreamError) as exc:
+        raise ValueError("The uploaded PDF is damaged or unreadable.") from exc
     if len(text) < 40:
         raise ValueError(
             "No readable text found. Please upload a text-based PDF, not a scanned image."
