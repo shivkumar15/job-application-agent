@@ -1,21 +1,22 @@
 import hashlib
 import os
-import re
 from datetime import datetime, timezone
 from typing import Literal, Optional
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 try:
     from pymongo import MongoClient
     from pymongo.errors import DuplicateKeyError
-except ImportError:  # pragma: no cover - requirements install pymongo
+except ImportError:  # pragma: no cover
     MongoClient = None
     DuplicateKeyError = Exception
 
 
 class InternshalaJobCreate(BaseModel):
+    """A listing manually entered by the user from Internshala's normal website."""
+
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
     title: str = Field(min_length=3, max_length=180)
@@ -38,7 +39,8 @@ class InternshalaJobCreate(BaseModel):
         if (
             parsed.scheme != "https"
             or parsed.hostname not in {"internshala.com", "www.internshala.com"}
-            or not parsed.path.startswith("/")
+            or parsed.username is not None
+            or parsed.password is not None
         ):
             raise ValueError("apply_url must be a genuine HTTPS Internshala URL.")
         return value
@@ -46,26 +48,20 @@ class InternshalaJobCreate(BaseModel):
     @field_validator("deadline")
     @classmethod
     def validate_deadline(cls, value: Optional[str]) -> Optional[str]:
-        if value is None:
-            return value
-        try:
-            datetime.strptime(value, "%Y-%m-%d")
-        except ValueError as exc:
-            raise ValueError("deadline must use YYYY-MM-DD format.") from exc
+        if value is not None:
+            try:
+                datetime.strptime(value, "%Y-%m-%d")
+            except ValueError as exc:
+                raise ValueError("deadline must use YYYY-MM-DD format.") from exc
         return value
 
-    @field_validator("stipend_amount")
-    @classmethod
-    def require_amount_for_paid(cls, value, info):
-        # Cross-field validation is completed in model_validator below.
-        return value
-
-    @classmethod
-    def model_validate(cls, obj, **kwargs):
-        model = super().model_validate(obj, **kwargs)
-        if model.stipend_status == "paid" and model.stipend_amount is None:
+    @model_validator(mode="after")
+    def validate_stipend(self):
+        if self.stipend_status == "paid" and self.stipend_amount is None:
             raise ValueError("stipend_amount is required when stipend_status is paid.")
-        return model
+        if self.stipend_status != "paid" and self.stipend_amount is not None:
+            raise ValueError("stipend_amount must be omitted unless stipend_status is paid.")
+        return self
 
 
 class InternshalaJobStore:
