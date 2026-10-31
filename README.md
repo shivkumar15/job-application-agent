@@ -22,14 +22,14 @@ From the repository root:
 ```powershell
 cd backend
 python -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 python -m uvicorn app.main:app --reload
 ```
 
-When reopening the terminal, activate the environment again with `.\\.venv\\Scripts\\Activate.ps1`. The `.venv` directory is excluded from Git.
+When reopening the terminal, activate the environment again with `.\.venv\Scripts\Activate.ps1`. The `.venv` directory is excluded from Git.
 
 Open:
 - Health: http://127.0.0.1:8000/health
