@@ -1,16 +1,8 @@
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app, job_store
 
 client = TestClient(app)
-
-
-@pytest.fixture(autouse=True)
-def clear_in_memory_store():
-    if job_store.storage_mode == "in_memory":
-        job_store._jobs.clear()
-    yield
 
 
 def sample_job(**overrides):
@@ -43,6 +35,7 @@ def test_status_reports_manual_capture():
 
 
 def test_create_and_list_paid_job():
+    job_store._jobs.clear()
     response = client.post("/api/v1/integrations/internshala/jobs", json=sample_job())
     assert response.status_code == 201
     assert response.json()["source"] == "internshala"
@@ -53,6 +46,7 @@ def test_create_and_list_paid_job():
 
 
 def test_duplicate_job_is_rejected():
+    job_store._jobs.clear()
     first = client.post("/api/v1/integrations/internshala/jobs", json=sample_job())
     second = client.post("/api/v1/integrations/internshala/jobs", json=sample_job())
     assert first.status_code == 201
@@ -68,6 +62,7 @@ def test_non_internshala_url_is_rejected():
 
 
 def test_unpaid_job_excluded_from_paid_filter():
+    job_store._jobs.clear()
     payload = sample_job(
         title="Frontend Intern",
         apply_url="https://internshala.com/internship/detail/unpaid-listing/",
@@ -89,6 +84,7 @@ def test_paid_job_requires_amount():
 
 
 def test_work_mode_filter():
+    job_store._jobs.clear()
     client.post("/api/v1/integrations/internshala/jobs", json=sample_job())
     hybrid = sample_job(
         title="React Intern",
