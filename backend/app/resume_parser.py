@@ -68,15 +68,14 @@ def _unique_casefold(values: list[str]) -> list[str]:
 
 
 def _internship_count(experience_text: str) -> int:
-    # Match the two experience role titles that this profile parser recognizes.
-    # The PDF text extractor often joins the title directly to the date.
-    role_patterns = (
-        r"(?m)^Machine Learning Intern(?=[A-Z]|\\b)",
-        r"(?m)^Full Stack Web Development Intern(?=[A-Z]|\\b)",
+    # PDF extraction may join role titles directly to the following date.
+    patterns = (
+        r"(?m)^Machine Learning Intern(?=[A-Z]|\b)",
+        r"(?m)^Full Stack Web Development Intern(?=[A-Z]|\b)",
     )
     return sum(
         len(re.findall(pattern, experience_text, re.IGNORECASE))
-        for pattern in role_patterns
+        for pattern in patterns
     )
 
 
@@ -86,15 +85,15 @@ def analyze_resume(file_obj: BinaryIO) -> dict:
 
     email_match = re.search(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", text, re.I)
     phone_match = re.search(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)", text)
+
     detected_skills = []
     for skill in SKILL_TERMS:
         pattern = re.escape(skill.casefold())
         if re.search(r"(?<![a-z0-9])" + pattern + r"(?![a-z0-9])", lower):
             detected_skills.append(skill)
-
-    aliases = {"react": "React.js"}
     detected_skills = [
-        aliases.get(skill.casefold(), skill) for skill in detected_skills
+        {"react": "React.js"}.get(skill.casefold(), skill)
+        for skill in detected_skills
     ]
     detected_skills = _unique_casefold(detected_skills)
 
@@ -110,8 +109,9 @@ def analyze_resume(file_obj: BinaryIO) -> dict:
     )
     degree = degree_match.group(0).strip() if degree_match else None
     if degree:
-        degree = re.split(r"\b(?:current\s*)?cgpa\b", degree, maxsplit=1, flags=re.I)[0]
-        degree = degree.strip(" :-–")
+        degree = re.split(
+            r"\b(?:current\s*)?cgpa\b", degree, maxsplit=1, flags=re.I
+        )[0].strip(" :-–")
 
     education_section = _find_section(text, SECTION_HEADINGS["education"])
     experience_section = _find_section(text, SECTION_HEADINGS["experience"])
