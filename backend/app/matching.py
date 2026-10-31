@@ -21,6 +21,8 @@ SKILL_ALIASES = {
     "mongo": "mongodb",
     "js": "javascript",
     "tailwind": "tailwind css",
+    "tailwindcss": "tailwind css",
+    "express.js": "express",
     "restapi": "rest apis",
     "restapis": "rest apis",
     "github": "github",
